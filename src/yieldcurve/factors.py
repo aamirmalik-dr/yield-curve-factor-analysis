@@ -154,13 +154,13 @@ def compare_reconstruction(
 
     Args:
         panel: DataFrame (dates x maturities) of yields in percent.
-        component_counts: Component counts to evaluate. Defaults to [1, 2, 3, 4, 5].
+        component_counts: Component counts to evaluate. Defaults to [1, 2, 3, 4, 5, 6].
 
     Returns:
         DataFrame indexed by component count with columns ``pca_rmse`` and
         ``nmf_rmse`` in yield points.
     """
-    component_counts = component_counts or [1, 2, 3, 4, 5]
+    component_counts = component_counts or [1, 2, 3, 4, 5, 6]
     rows = []
     for k in component_counts:
         rows.append(
