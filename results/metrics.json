@@ -1,0 +1,42 @@
+{
+  "data_source": "data/treasury_sample.csv",
+  "panel_days": 400,
+  "panel_maturities": 12,
+  "panel_start": "2024-12-03",
+  "panel_end": "2026-07-10",
+  "n_components": 3,
+  "pca_explained_variance_ratio": [
+    0.665601,
+    0.277533,
+    0.041191
+  ],
+  "pca_cumulative_explained": 0.984324,
+  "pca_rmse": 0.031081,
+  "nmf_rmse": 0.042468,
+  "reconstruction_sweep": {
+    "1": {
+      "pca_rmse": 0.143555,
+      "nmf_rmse": 0.17054
+    },
+    "2": {
+      "pca_rmse": 0.059199,
+      "nmf_rmse": 0.097161
+    },
+    "3": {
+      "pca_rmse": 0.031081,
+      "nmf_rmse": 0.042468
+    },
+    "4": {
+      "pca_rmse": 0.018596,
+      "nmf_rmse": 0.036223
+    },
+    "5": {
+      "pca_rmse": 0.013712,
+      "nmf_rmse": 0.034804
+    },
+    "6": {
+      "pca_rmse": 0.009498,
+      "nmf_rmse": 0.051563
+    }
+  }
+}

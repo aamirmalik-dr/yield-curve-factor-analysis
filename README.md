@@ -1,79 +1,65 @@
-# yield-curve-factor-analysis
+# How many factors drive the US Treasury yield curve?
 
-Dimensionality reduction of the US Treasury yield curve. PCA on a panel of daily par yields recovers the classic level, slope, and curvature factors, and an NMF variant provides a nonnegative, parts-based alternative. The two methods are compared by reconstruction error at matched component counts.
+A short empirical study. Twelve par yield tenors move every trading day, from 1 month out to 30 years. The question this repository answers with code: how few linear factors reproduce essentially all of that movement, and does a nonnegative factorization, which is forced to build curves from nonnegative parts, tell the same level, slope, curvature story that principal components do?
 
-## What it does
-
-- Downloads daily Treasury par yield curve rates from the US Treasury website (public domain US government data), covering 12 maturities from 1 month to 30 years.
-- Falls back to a locally cached CSV, then to a synthetic Nelson-Siegel generator, so every script, test, and the demo notebook runs fully offline. The loader always prints which source it used.
-- Fits PCA on the mean-centered panel, returning explained variance ratios, sign-normalized loadings, factor scores, and a rank-k reconstruction.
-- Fits NMF on the raw nonnegative panel, returning nonnegative basis curves, weights, and the reconstruction error.
-- Compares PCA and NMF reconstruction RMSE across component counts and writes three figures: factor loadings, scree plot, and the reconstruction comparison.
-
-## What it does not do
-
-- No yield forecasting, no trading signals, no bootstrapping of zero curves. This is a descriptive factor decomposition of par yields.
-- No intraday or non-US data. The loader targets the US Treasury daily par yield CSV endpoint only.
-
-## Install
+Everything below reproduces offline in about 30 seconds from a committed 400-day sample of real Treasury data:
 
 ```
 python -m venv .venv
 .venv\Scripts\activate      # Windows, or: source .venv/bin/activate
 pip install -e ".[dev]"
+python scripts/analyze.py   # PCA + NMF on data/treasury_sample.csv, no network
+python scripts/compare.py   # reconstruction-error sweep, k = 1..6
 ```
 
-Requires Python 3.11 or newer.
+## Question
 
-## Run
+The term-structure literature holds that three factors, level, slope, and curvature, explain nearly all daily yield curve variation. Two specific things are tested here:
 
-```
-python scripts/download_data.py           # fetch data to data/treasury_yields.csv
-python scripts/analyze.py                 # full analysis, figures in results/
-python scripts/analyze.py --synthetic     # guaranteed-offline demo
-pytest -q                                 # tests, fully offline
-```
+1. Does plain PCA on mean-centered daily par yields recover those three shapes, and how much variance does each carry on a recent window?
+2. NMF factorizes the raw nonnegative panel into nonnegative basis curves with nonnegative weights, a more physically interpretable decomposition for yields. How much reconstruction accuracy does that interpretability cost at matched component counts?
 
-The demo notebook is `notebooks/demo.ipynb`, executed with saved outputs.
+## Method
 
-## Results
+- Data: daily US Treasury par yield curve rates, 12 maturities, public domain US government data. A 400-row sample (2024-12-03 to 2026-07-10), carved from a live download, is committed at `data/treasury_sample.csv` so the study runs with no network. `scripts/download_data.py` fetches the full multi-year panel, and the loader falls back to cache, then to a synthetic Nelson-Siegel generator, so nothing here ever hard-fails offline.
+- PCA: fit on the mean-centered panel with no variance scaling, so loadings stay in yield units. Component signs are normalized to a positive mean, making level uniformly positive and runs reproducible.
+- NMF: fit on the raw panel (yields are nonnegative), NNDSVDA initialization, fixed seed.
+- Ablation: both models are refit at k = 1..6 components and compared by reconstruction RMSE in yield points. Full tables in [RESULTS.md](RESULTS.md), machine-readable copy in `results/metrics.json`.
 
-Produced by `python scripts/analyze.py` on live Treasury data downloaded at run time: 880 trading days, 2023-01-03 to 2026-07-10, 12 maturities.
+## Findings
 
-PCA explained variance ratio (mean-centered yields, no scaling):
+Three components explain 98.4 percent of daily variance on the committed sample (level 0.666, slope 0.278, curvature 0.041). On the full 880-day 2023-2026 download the same three shapes appear with cumulative 0.988 (level 0.774, slope 0.174, curvature 0.041), so the structure is stable across windows even though the level-slope split shifts.
 
-| Component | Interpretation | Explained variance |
-| --- | --- | --- |
-| PC1 | Level | 0.7741 |
-| PC2 | Slope | 0.1738 |
-| PC3 | Curvature | 0.0406 |
-| First three cumulative | | 0.9884 |
+The loading heatmap is the whole result in one picture: PC1 loads with one sign across the curve (level), PC2 flips sign between short and long tenors (slope), PC3 is a butterfly, positive wings against a negative belly (curvature).
 
-The first component loads with the same sign on every maturity (level), the second changes sign between short and long tenors (slope), and the third is hump-shaped (curvature), matching the standard term-structure factor literature.
+![PCA factor loadings heatmap](results/factor_loadings.png)
 
-Reconstruction RMSE in yield points at matched component counts:
+On the accuracy cost of nonnegativity: PCA beats NMF at every matched k, which is expected, since PCA with its mean term is the optimal linear rank-k approximation. The gap at k = 3 is small, 0.031 vs 0.042 RMSE in yield points on the sample. NMF error is also not monotone in k (it worsens from k = 5 to 6 on the sample), a local-optimum artifact of the nonconvex NMF objective, reported as observed.
 
-| Components | PCA | NMF |
-| --- | --- | --- |
-| 1 | 0.2459 | 0.3703 |
-| 2 | 0.1181 | 0.1297 |
-| 3 | 0.0556 | 0.0681 |
-| 4 | 0.0365 | 0.0531 |
-| 5 | 0.0208 | 0.0586 |
+![PCA vs NMF reconstruction error](results/reconstruction.png)
 
-PCA reconstructs more accurately at every matched count, as expected: PCA with its mean term is the optimal linear rank-k approximation, while NMF trades accuracy for nonnegative, more interpretable basis curves. The small NMF uptick from 4 to 5 components reflects a local optimum of the nonconvex NMF objective, reported as observed.
+So the answer to the title question: three, and the nonnegative decomposition broadly agrees while paying a small, quantified accuracy premium.
 
-These numbers came from live Treasury data because the endpoint was reachable during the run. Offline, the loader reports that it used the cache or the synthetic generator, and synthetic results will differ.
+## Limitations
 
-## Package layout
+- Descriptive, not predictive. No forecasting, no trading signals, no zero-curve bootstrapping; this decomposes par yields as published.
+- US daily data only, and the committed sample covers a single 19-month window. Factor shares (level vs slope) are window-dependent, as the sample vs full-panel comparison in RESULTS.md shows.
+- NMF results depend on initialization and seed at larger k. The reported numbers fix both; other seeds land in other local optima.
+- Synthetic fallback data is a Nelson-Siegel simulation for demos and tests, and is never mixed into reported results.
+
+## Repository layout
 
 ```
-src/yieldcurve/     library code (data loading, PCA and NMF decompositions)
-scripts/            download_data.py, analyze.py
-notebooks/          demo.ipynb with executed outputs
-tests/              pytest suite, runs fully offline
-data/               gitignored, see data/README.md
+src/yieldcurve/       data loading, PCA and NMF decompositions, metrics IO
+scripts/              analyze.py (heatmap, scree, metrics), compare.py (k-sweep), download_data.py
+data/                 committed treasury_sample.csv, full downloads gitignored
+results/              committed figures and metrics.json, regenerated by the scripts
+notebooks/demo.ipynb  executed walkthrough on the committed sample
+tests/                pytest suite, fully offline (PCA vs SVD checks, loader, NMF)
+RESULTS.md            all measured numbers with reproduction commands
 ```
+
+Verification: `pytest -q` (38 tests, offline) and `ruff check .`.
 
 ## Author
 
