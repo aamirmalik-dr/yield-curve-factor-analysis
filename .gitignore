@@ -12,12 +12,17 @@ dist/
 .pytest_cache/
 .ruff_cache/
 
-# Data (kept out of the repo, see data/README.md)
+# Data: full downloads stay out of the repo, the small sample is committed
 data/*
 !data/README.md
+!data/treasury_sample.csv
 
-# Outputs
-results/
+# Outputs: committed figures and metrics only
+results/*
+!results/factor_loadings.png
+!results/scree.png
+!results/reconstruction.png
+!results/metrics.json
 
 # Notebook checkpoints
 .ipynb_checkpoints/

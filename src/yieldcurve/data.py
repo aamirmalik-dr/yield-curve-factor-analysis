@@ -43,6 +43,39 @@ MATURITY_YEARS: dict[str, float] = {
 }
 
 DEFAULT_CACHE = Path("data") / "treasury_yields.csv"
+SAMPLE_PATH = Path("data") / "treasury_sample.csv"
+
+
+def read_panel_csv(path: str | Path) -> pd.DataFrame:
+    """Read a yield curve panel from a local CSV, with no network access.
+
+    The file must have a ``Date`` column (or a date index in the first column)
+    and one column per maturity in ``MATURITY_YEARS``, as written by
+    ``download_treasury_yields`` or shipped in ``data/treasury_sample.csv``.
+
+    Args:
+        path: Path to the CSV file.
+
+    Returns:
+        DataFrame indexed by date (ascending) with one column per maturity,
+        values in percent. Rows with any missing tenor are dropped.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        ValueError: If expected maturity columns are missing or the panel is empty.
+    """
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"No panel CSV at {path}")
+    frame = pd.read_csv(path, index_col=0, parse_dates=True)
+    missing = [col for col in MATURITY_YEARS if col not in frame.columns]
+    if missing:
+        raise ValueError(f"Panel CSV {path} is missing columns: {missing}")
+    panel = frame[list(MATURITY_YEARS)].apply(pd.to_numeric, errors="coerce").dropna()
+    panel = panel.sort_index()
+    if panel.empty:
+        raise ValueError(f"Panel CSV {path} contains no complete rows")
+    return panel
 
 
 def download_treasury_yields(years: list[int], timeout: float = 30.0) -> pd.DataFrame:

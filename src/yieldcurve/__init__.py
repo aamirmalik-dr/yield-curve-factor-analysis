@@ -2,9 +2,11 @@
 
 from yieldcurve.data import (
     MATURITY_YEARS,
+    SAMPLE_PATH,
     download_treasury_yields,
     generate_synthetic_yields,
     load_yield_curve,
+    read_panel_csv,
 )
 from yieldcurve.factors import (
     NMFResult,
@@ -18,6 +20,7 @@ __version__ = "0.1.0"
 
 __all__ = [
     "MATURITY_YEARS",
+    "SAMPLE_PATH",
     "NMFResult",
     "PCAResult",
     "compare_reconstruction",
@@ -26,4 +29,5 @@ __all__ = [
     "fit_pca",
     "generate_synthetic_yields",
     "load_yield_curve",
+    "read_panel_csv",
 ]
