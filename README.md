@@ -1,4 +1,4 @@
-# How many factors drive the US Treasury yield curve?
+# yield-curve-factor-analysis
 
 *Origin: Originally developed for the AI for Finance course at KAIST (Spring 2023); refactored and open-sourced in July 2026.*
 
