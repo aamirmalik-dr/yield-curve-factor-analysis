@@ -1,7 +1,5 @@
 # yield-curve-factor-analysis
 
-*Origin: Originally developed for the AI for Finance course at KAIST (Spring 2023); refactored and open-sourced in July 2026.*
-
 A short empirical study. Twelve par yield tenors move every trading day, from 1 month out to 30 years. The question this repository answers with code: how few linear factors reproduce essentially all of that movement, and does a nonnegative factorization, which is forced to build curves from nonnegative parts, tell the same level, slope, curvature story that principal components do?
 
 Everything below reproduces offline in about 30 seconds from a committed 400-day sample of real Treasury data:
@@ -73,3 +71,7 @@ Aamir Malik
 ## License
 
 MIT, see LICENSE.
+
+---
+
+*Refactored and engineered into this tested, reproducible project in July 2026, from work originally done for the AI for Finance course at KAIST (Spring 2023).*
